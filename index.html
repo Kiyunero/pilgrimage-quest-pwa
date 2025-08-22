@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クエストアプリ</title>
+    
+    <meta name="theme-color" content="#ffffff"/>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <div v-if="loading" class="spinner-border m-5" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+
+        <div v-else>
+            <div id="map-container">
+                <div id="map"></div>
+            </div>
+
+            <div class="content-container">
+                <h1>聖地巡礼クエスト</h1>
+                <hr class="my-4">
+
+                <div class="card p-3 mb-4 shadow-sm">
+                    <h5 class="card-title">あなたのスタンプカード</h5>
+                    <div class="stamp-card-container">
+                        <img src="images/stamp_base.png" alt="スタンプ台紙">
+                        <img v-for="stamp in completedStamps" :key="stamp" :src="stamp" class="stamp-layer" alt="スタンプ">
+                    </div>
+                </div>
+
+                <div v-if="inProgressQuests.length > 0" class="card p-3 mb-4 shadow-sm quest-list-container">
+                    <h5 class="card-title text-center">進行中のクエスト</h5>
+                    <ul class="list-group">
+                        <li v-for="quest in inProgressQuests" :key="quest.id" class="list-group-item quest-item-card">
+                            <strong>{{ quest.title }}</strong>
+                            <p class="mb-1 small">{{ quest.description }}</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-success btn-lg" @click="startScanner">
+                        QRコードをスキャン
+                    </button>
+                </div>
+        
+                <div v-if="scanResultMessage" :class="scanResultClass" class="alert mt-4">
+                    {{ scanResultMessage }}
+                </div>
+
+                <div class="card p-3 my-4 shadow-sm">
+                    <h5 class="card-title">自販機と連携</h5>
+                    <p>下のボタンを押して合言葉を発行し、自販機の画面で入力してください。</p>
+                    <button class="btn btn-primary btn-lg mt-2" @click="generateAuthToken" :disabled="isTokenLoading">
+                        <span v-if="isTokenLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        合言葉を発行する
+                    </button>
+                    <div v-if="authToken" class="mt-4 alert alert-success">
+                        <h4>合言葉: <span class="auth-token">{{ authToken }}</span></h4>
+                        <p class="mb-0">この番号を<strong>5分以内</strong>に自販機で入力してください。</p>
+                    </div>
+                     <div v-if="errorMessage" class="mt-4 alert alert-danger">
+                        <p class="mb-0">{{ errorMessage }}</p>
+                    </div>
+                </div>
+        
+                <div v-if="isScannerVisible" id="scanner-container">
+                    <video id="scanner-video" playsinline></video>
+                    <button class="btn btn-danger" @click="stopScanner">キャンセル</button>
+                </div>
+
+                <div v-if="isRallyComplete" class="completion-overlay">
+                    <div class="completion-content">
+                        <h1>🎉コンプリート！🎉</h1>
+                        <p class="lead">おめでとうございます！全てのスタンプが集まりました！</p>
+                        
+                        <div class="reward-image-container">
+                            <h3>完成したスタンプ画像</h3>
+                            <div class="stamp-card-container">
+                                <img src="images/stamp_base.png" alt="スタンプ台紙">
+                                <img v-for="stamp in completedStamps" :key="stamp" :src="stamp" class="stamp-layer" alt="スタンプ">
+                            </div>
+                            <button class="btn btn-warning mt-2" @click="downloadCompletedStamp">完成スタンプをダウンロード</button>
+                        </div>
+
+                        <div class="reward-image-container">
+                            <h3>限定画像をプレゼント！</h3>
+                            <img src="images/special_reward.png" class="img-fluid rounded shadow-sm" alt="限定画像">
+                            <a href="images/special_reward.png" download="限定特典画像.png" class="btn btn-warning mt-2">
+                                限定画像をダウンロード
+                            </a>
+                        </div>
+
+                        <div class="reward-image-container">
+                            <h3>景品交換コード</h3>
+                            <p>このコードを自販機で入力して、特別な景品を受け取ろう！</p>
+                            <button v-if="!rewardCode" class="btn btn-danger btn-lg" @click="generateRewardCode" :disabled="isTokenLoading">
+                                 <span v-if="isTokenLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                報酬コードを発行
+                            </button>
+                            <div v-if="rewardCode" class="alert alert-danger mt-2">
+                                <h4>報酬コード: <span class="auth-token">{{ rewardCode }}</span></h4>
+                                <small>（このコードは一度しか使えません）</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACAVYO9bza32V-dYFaiRafHn8owtIw3eg&callback=initPwaMap" defer></script>
+    <script src="js/main.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+    </body>
+</html>
