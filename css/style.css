@@ -20,6 +20,49 @@ body {
     height: 100%;
 }
 
+/* ▼▼▼ 推しキャラ選択UIのスタイルを追加 ▼▼▼ */
+.oshi-selector-container {
+    background-color: #ffffff;
+    padding: 10px 0;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.oshi-selector-title {
+    margin: 0 0 8px 0;
+    font-weight: bold;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.oshi-icons-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.oshi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.oshi-icon:hover {
+    transform: scale(1.1);
+}
+
+.oshi-icon.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
+    transform: scale(1.1);
+}
+/* ▲▲▲ 推しキャラ選択UIのスタイル追加ここまで ▲▲▲ */
+
+
 .content-container {
     padding: 1rem;
     text-align: center;

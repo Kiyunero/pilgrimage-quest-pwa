@@ -21,6 +21,18 @@
                 <div id="map"></div>
             </div>
 
+            <div class="oshi-selector-container">
+                <p class="oshi-selector-title">マイ推しを設定</p>
+                <div class="oshi-icons-wrapper">
+                    <img v-for="oshi in oshis" 
+                         :key="oshi.id" 
+                         :src="oshi.icon" 
+                         :alt="oshi.name" 
+                         class="oshi-icon"
+                         :class="{ 'selected': myOshi === oshi.id }"
+                         @click="setMyOshi(oshi.id)">
+                </div>
+            </div>
             <div class="content-container">
                 <h1>聖地巡礼クエスト</h1>
                 <hr class="my-4">
@@ -89,11 +101,11 @@
 
                         <div class="reward-image-container">
                             <h3>限定画像をプレゼント！</h3>
-                            <img src="images/special_reward.png" class="img-fluid rounded shadow-sm" alt="限定画像">
-                            <a href="images/special_reward.png" download="限定特典画像.png" class="btn btn-warning mt-2">
+                            <img :src="rewardImageUrl" class="img-fluid rounded shadow-sm" alt="限定画像">
+                            <a :href="rewardImageUrl" download="限定特典画像.png" class="btn btn-warning mt-2">
                                 限定画像をダウンロード
                             </a>
-                        </div>
+                            </div>
 
                         <div class="reward-image-container">
                             <h3>景品交換コード</h3>
