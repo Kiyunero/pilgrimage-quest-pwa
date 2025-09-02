@@ -4,6 +4,31 @@ body {
     overflow-x: hidden;
 }
 
+/* ▼▼▼ Lottie再生用のスタイルに変更 ▼▼▼ */
+#animation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 背景は透明にして下のUIが透けて見えるようにします */
+    background-color: rgba(0, 0, 0, 0.5); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+#animation-overlay > div {
+    max-width: 90%;
+    max-height: 90%;
+    width: 400px; /* アニメーションのサイズを適宜調整 */
+}
+/* ▲▲▲ ここまで変更 ▲▲▲ */
+
+
 #app {
     max-width: 100%;
     padding: 0;
@@ -20,7 +45,6 @@ body {
     height: 100%;
 }
 
-/* ▼▼▼ 推しキャラ選択UIのスタイルを追加 ▼▼▼ */
 .oshi-selector-container {
     background-color: #ffffff;
     padding: 10px 0;
@@ -60,7 +84,6 @@ body {
     box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
     transform: scale(1.1);
 }
-/* ▲▲▲ 推しキャラ選択UIのスタイル追加ここまで ▲▲▲ */
 
 
 .content-container {

@@ -12,6 +12,12 @@
 </head>
 <body>
     <div id="app">
+        <div id="animation-overlay" v-if="isQuestStartAnimationVisible">
+            <div id="lottie-start-container"></div>
+        </div>
+        <div id="animation-overlay" v-if="isQuestClearAnimationVisible">
+            <div id="lottie-clear-container"></div>
+        </div>
         <div v-if="loading" class="spinner-border m-5" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
@@ -20,7 +26,6 @@
             <div id="map-container">
                 <div id="map"></div>
             </div>
-
             <div class="oshi-selector-container">
                 <p class="oshi-selector-title">マイ推しを設定</p>
                 <div class="oshi-icons-wrapper">
@@ -36,7 +41,6 @@
             <div class="content-container">
                 <h1>聖地巡礼クエスト</h1>
                 <hr class="my-4">
-
                 <div class="card p-3 mb-4 shadow-sm">
                     <h5 class="card-title">あなたのスタンプカード</h5>
                     <div class="stamp-card-container">
@@ -44,7 +48,6 @@
                         <img v-for="stamp in completedStamps" :key="stamp" :src="stamp" class="stamp-layer" alt="スタンプ">
                     </div>
                 </div>
-
                 <div v-if="inProgressQuests.length > 0" class="card p-3 mb-4 shadow-sm quest-list-container">
                     <h5 class="card-title text-center">進行中のクエスト</h5>
                     <ul class="list-group">
@@ -59,11 +62,9 @@
                         QRコードをスキャン
                     </button>
                 </div>
-        
                 <div v-if="scanResultMessage" :class="scanResultClass" class="alert mt-4">
                     {{ scanResultMessage }}
                 </div>
-
                 <div class="card p-3 my-4 shadow-sm">
                     <h5 class="card-title">自販機と連携</h5>
                     <p>下のボタンを押して合言葉を発行し、自販機の画面で入力してください。</p>
@@ -79,17 +80,14 @@
                         <p class="mb-0">{{ errorMessage }}</p>
                     </div>
                 </div>
-        
                 <div v-if="isScannerVisible" id="scanner-container">
                     <video id="scanner-video" playsinline></video>
                     <button class="btn btn-danger" @click="stopScanner">キャンセル</button>
                 </div>
-
                 <div v-if="isRallyComplete" class="completion-overlay">
                     <div class="completion-content">
                         <h1>🎉コンプリート！🎉</h1>
                         <p class="lead">おめでとうございます！全てのスタンプが集まりました！</p>
-                        
                         <div class="reward-image-container">
                             <h3>完成したスタンプ画像</h3>
                             <div class="stamp-card-container">
@@ -98,15 +96,13 @@
                             </div>
                             <button class="btn btn-warning mt-2" @click="downloadCompletedStamp">完成スタンプをダウンロード</button>
                         </div>
-
                         <div class="reward-image-container">
                             <h3>限定画像をプレゼント！</h3>
                             <img :src="rewardImageUrl" class="img-fluid rounded shadow-sm" alt="限定画像">
                             <a :href="rewardImageUrl" download="限定特典画像.png" class="btn btn-warning mt-2">
                                 限定画像をダウンロード
                             </a>
-                            </div>
-
+                        </div>
                         <div class="reward-image-container">
                             <h3>景品交換コード</h3>
                             <p>このコードを自販機で入力して、特別な景品を受け取ろう！</p>
@@ -129,8 +125,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACAVYO9bza32V-dYFaiRafHn8owtIw3eg&callback=initPwaMap" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <script src="js/main.js"></script>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

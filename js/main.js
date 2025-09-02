@@ -38,7 +38,6 @@ function initPwaMap() {
                 allQuests: [],
                 map: null,
                 spots: [],
-                // markers: [], // ← この行を削除
                 userListener: null,
                 activeInfoWindow: null,
                 oshis: [
@@ -49,6 +48,10 @@ function initPwaMap() {
                     { id: 5, name: 'キャラ5', icon: 'images/oshi_5.png' },
                 ],
                 myOshi: 1,
+                // ▼▼▼ Lottie表示制御用のstateに変更 ▼▼▼
+                isQuestStartAnimationVisible: false,
+                isQuestClearAnimationVisible: false,
+                // ▲▲▲ ここまで変更 ▲▲▲
             };
         },
         computed: {
@@ -84,7 +87,6 @@ function initPwaMap() {
             await this.initializeUser();
             this.loading = false;
             
-            // ▼▼▼ Vueの監視外にマーカー配列を定義 ▼▼▼
             this.mapMarkers = [];
 
             await this.$nextTick();
@@ -121,7 +123,6 @@ function initPwaMap() {
                         this.userProfile = newUserProfile;
                     }
                     if (this.map) {
-                        // ▼▼▼ 前回のテストでコメントアウトした箇所を元に戻します ▼▼▼
                         this.placePwaMarkers();
                     }
                 });
@@ -130,8 +131,8 @@ function initPwaMap() {
                 const mapElement = document.getElementById('map');
                 if (mapElement) {
                     this.map = new google.maps.Map(mapElement, {
-                        center: { lat: 36.3910, lng: 139.0622 },
-                        zoom: 15,
+                        center: { lat: 36.391618491418384, lng: 139.07080464798733 },
+                        zoom: 16.5,
                         gestureHandling: 'greedy'
                     });
                     this.placePwaMarkers();
@@ -148,10 +149,8 @@ function initPwaMap() {
                 this.spots = spotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             },
             placePwaMarkers() {
-                // ▼▼▼ this.markers を this.mapMarkers に変更 ▼▼▼
                 this.mapMarkers.forEach(marker => marker.setMap(null));
                 this.mapMarkers = [];
-                // ▲▲▲
 
                 const selectedOshiData = this.oshis.find(o => o.id === this.myOshi);
                 if (!selectedOshiData) {
@@ -175,9 +174,9 @@ function initPwaMap() {
                         title: spot.name,
                         icon: {
                             url: oshiIconUrl,
-                            scaledSize: new google.maps.Size(48, 48),
+                            scaledSize: new google.maps.Size(42, 42),
                         },
-                        opacity: isCompleted ? 1.0 : 0.6
+                        opacity: isCompleted ? 0.5 : 1.0
                     });
                     
                     const destination = `${spot.latitude},${spot.longitude}`;
@@ -199,9 +198,7 @@ function initPwaMap() {
                         infoWindow.open(this.map, marker);
                         this.activeInfoWindow = infoWindow;
                     });
-                    // ▼▼▼ this.markers を this.mapMarkers に変更 ▼▼▼
                     this.mapMarkers.push(marker);
-                    // ▲▲▲
                 });
             },
             
@@ -280,6 +277,7 @@ function initPwaMap() {
             },
             async handleQrCode(qrCodeValue) {
                 try {
+                    // クエスト開始のQRコード
                     if (qrCodeValue.startsWith('QUEST_START::')) {
                         const questId = qrCodeValue.split('::')[1];
                         const userRef = db.collection("users").doc(this.userId);
@@ -291,8 +289,10 @@ function initPwaMap() {
 
                         this.scanResultMessage = `クエストを開始しました！`;
                         this.scanResultClass = "alert-info";
+                        this.playQuestStartAnimation(); // 開始アニメーションを再生
 
                     } else {
+                        // クエストクリアのQRコード
                         const questsRef = db.collection("quests");
                         const querySnapshot = await questsRef.where("clearQRCodeValue", "==", qrCodeValue).get();
                         
@@ -313,6 +313,7 @@ function initPwaMap() {
 
                         this.scanResultMessage = `クエスト「${questDoc.data().title}」をクリアしました！`;
                         this.scanResultClass = "alert-success";
+                        this.playQuestClearAnimation(); // クリアアニメーションを再生
                     }
 
                 } catch (error) {
@@ -320,6 +321,44 @@ function initPwaMap() {
                     this.scanResultMessage = "QRコードの処理中にエラーが発生しました。";
                     this.scanResultClass = "alert-danger";
                 }
+            },
+            playQuestStartAnimation() {
+                this.isQuestStartAnimationVisible = true;
+                this.$nextTick(() => {
+                    const container = document.getElementById('lottie-start-container');
+                    // コンテナの中身を空にしてからアニメーションをロード
+                    container.innerHTML = ''; 
+                    const anim = lottie.loadAnimation({
+                        container: container,
+                        renderer: 'svg',
+                        loop: false,
+                        autoplay: true,
+                        path: 'lottie/quest_start.json' // JSONファイルのパス
+                    });
+                    // アニメーション完了時の処理
+                    anim.addEventListener('complete', () => {
+                        this.isQuestStartAnimationVisible = false;
+                        anim.destroy(); // メモリを解放
+                    });
+                });
+            },
+            playQuestClearAnimation() {
+                this.isQuestClearAnimationVisible = true;
+                this.$nextTick(() => {
+                    const container = document.getElementById('lottie-clear-container');
+                    container.innerHTML = '';
+                    const anim = lottie.loadAnimation({
+                        container: container,
+                        renderer: 'svg',
+                        loop: false,
+                        autoplay: true,
+                        path: 'lottie/quest_clear.json' // JSONファイルのパス
+                    });
+                    anim.addEventListener('complete', () => {
+                        this.isQuestClearAnimationVisible = false;
+                        anim.destroy();
+                    });
+                });
             },
             downloadCompletedStamp() {
                 const canvas = document.createElement('canvas');
