@@ -38,10 +38,9 @@ function initPwaMap() {
                 allQuests: [],
                 map: null,
                 spots: [],
-                markers: [],
+                // markers: [], // ← この行を削除
                 userListener: null,
                 activeInfoWindow: null,
-                // ▼▼▼ 推しキャラ機能のために追加 ▼▼▼
                 oshis: [
                     { id: 1, name: 'キャラ1', icon: 'images/oshi_1.png' },
                     { id: 2, name: 'キャラ2', icon: 'images/oshi_2.png' },
@@ -49,8 +48,7 @@ function initPwaMap() {
                     { id: 4, name: 'キャラ4', icon: 'images/oshi_4.png' },
                     { id: 5, name: 'キャラ5', icon: 'images/oshi_5.png' },
                 ],
-                myOshi: 1, // デフォルトの推しキャラID
-                // ▲▲▲ 推しキャラ機能のための追加ここまで ▲▲▲
+                myOshi: 1,
             };
         },
         computed: {
@@ -73,27 +71,23 @@ function initPwaMap() {
                     .filter(questId => this.userProfile.questProgress[questId] === 'in_progress');
                 return this.allQuests.filter(quest => inProgressQuestIds.includes(quest.id));
             },
-            // ▼▼▼ 推しキャラ機能のために追加 ▼▼▼
             rewardImageUrl() {
-                // 選択された推しキャラに応じた報酬画像のパスを返す
                 return `images/reward_${this.myOshi}.png`;
             }
-            // ▲▲▲ 推しキャラ機能のための追加ここまで ▲▲▲
         },
         async mounted() {
-            // ▼▼▼ 推しキャラ機能のために追加 ▼▼▼
-            // ローカルストレージから保存された推しキャラIDを読み込む
             const savedOshi = localStorage.getItem('myOshi');
             if (savedOshi) {
                 this.myOshi = parseInt(savedOshi, 10);
             }
-            // ▲▲▲ 推しキャラ機能のための追加ここまで ▲▲▲
 
             await this.initializeUser();
             this.loading = false;
             
-            await this.$nextTick();
+            // ▼▼▼ Vueの監視外にマーカー配列を定義 ▼▼▼
+            this.mapMarkers = [];
 
+            await this.$nextTick();
             this.initializeMap();
         },
         methods: {
@@ -127,6 +121,7 @@ function initPwaMap() {
                         this.userProfile = newUserProfile;
                     }
                     if (this.map) {
+                        // ▼▼▼ 前回のテストでコメントアウトした箇所を元に戻します ▼▼▼
                         this.placePwaMarkers();
                     }
                 });
@@ -135,8 +130,8 @@ function initPwaMap() {
                 const mapElement = document.getElementById('map');
                 if (mapElement) {
                     this.map = new google.maps.Map(mapElement, {
-                        center: { lat: 35.7100, lng: 139.8107 },
-                        zoom: 12,
+                        center: { lat: 36.3910, lng: 139.0622 },
+                        zoom: 15,
                         gestureHandling: 'greedy'
                     });
                     this.placePwaMarkers();
@@ -152,11 +147,12 @@ function initPwaMap() {
                 const spotsSnapshot = await db.collection('spots').get();
                 this.spots = spotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             },
-            // ▼▼▼ マップピンのロジックを大幅に修正 ▼▼▼
             placePwaMarkers() {
-                this.markers.forEach(marker => marker.setMap(null));
-                this.markers = [];
-                
+                // ▼▼▼ this.markers を this.mapMarkers に変更 ▼▼▼
+                this.mapMarkers.forEach(marker => marker.setMap(null));
+                this.mapMarkers = [];
+                // ▲▲▲
+
                 const selectedOshiData = this.oshis.find(o => o.id === this.myOshi);
                 if (!selectedOshiData) {
                     console.error("選択された推しキャラが見つかりません。");
@@ -171,7 +167,6 @@ function initPwaMap() {
                     };
                     
                     const questStatus = this.userProfile ? this.userProfile.questProgress[spot.questId] : undefined;
-                    
                     const isCompleted = questStatus === 'completed';
 
                     const marker = new google.maps.Marker({
@@ -180,9 +175,9 @@ function initPwaMap() {
                         title: spot.name,
                         icon: {
                             url: oshiIconUrl,
-                            scaledSize: new google.maps.Size(48, 48), // アイコンのサイズを調整
+                            scaledSize: new google.maps.Size(48, 48),
                         },
-                        opacity: isCompleted ? 1.0 : 0.6 // 完了なら不透明、未完了なら半透明
+                        opacity: isCompleted ? 1.0 : 0.6
                     });
                     
                     const destination = `${spot.latitude},${spot.longitude}`;
@@ -204,20 +199,17 @@ function initPwaMap() {
                         infoWindow.open(this.map, marker);
                         this.activeInfoWindow = infoWindow;
                     });
-                    this.markers.push(marker);
+                    // ▼▼▼ this.markers を this.mapMarkers に変更 ▼▼▼
+                    this.mapMarkers.push(marker);
+                    // ▲▲▲
                 });
             },
-            // ▲▲▲ マップピンのロジック修正ここまで ▲▲▲
             
-            // ▼▼▼ 推しキャラ機能のために追加 ▼▼▼
             setMyOshi(oshiId) {
                 this.myOshi = oshiId;
-                // 選択をローカルストレージに保存
                 localStorage.setItem('myOshi', oshiId);
-                // マップのマーカーを即時更新
                 this.placePwaMarkers();
             },
-            // ▲▲▲ 推しキャラ機能のための追加ここまで ▲▲▲
 
             async generateAuthToken() {
                 this.isTokenLoading = true;
